@@ -1,13 +1,13 @@
 cmake_minimum_required(VERSION 3.10)
 
-set(PROJECT "database")
+set(PROJECT "durc")
 set(CMAKE_C_COMPILER "/usr/bin/clang")
 set(CMAKE_C_STANDARD 11)
 
 project(
     $(PROJECT)    
     VERSION 1.0.0
-    DESCRIPTION "database structure from scratch tutorial"
+    DESCRIPTION "sqlite like database structure from scratch tutorial"
     LANGUAGES C
 )
 
