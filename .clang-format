@@ -66,20 +66,7 @@ ForEachMacros:
   - foreach
   - Q_FOREACH
   - BOOST_FOREACH
-IncludeBlocks:   Regroup
-IncludeCategories:
-  - Regex:           '^<ext/.*\.h>'
-    Priority:        3
-    SortPriority:    3
-  - Regex:           '^<.*\.h>'
-    Priority:        3
-    SortPriority:    3
-  - Regex:           '^<.*'
-    Priority:        2
-    SortPriority:    2
-  - Regex:           '.*'
-    Priority:        1
-    SortPriority:    1
+IncludeBlocks:   Merge
 IncludeIsMainRegex: '([-_](test|unittest))?$'
 IncludeIsMainSourceRegex: ''
 IndentCaseLabels: true
@@ -129,7 +116,7 @@ RawStringFormats:
     CanonicalDelimiter: ''
     BasedOnStyle:    google
 ReflowComments:  true
-SortIncludes:    true
+SortIncludes:    CaseInsensitive
 SortUsingDeclarations: true
 SpaceAfterCStyleCast: true
 SpaceAfterLogicalNot: false

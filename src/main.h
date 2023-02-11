@@ -2,7 +2,6 @@
 #define MAIN_H
 
 #include "db/layout.h"
-
 #include <stdio.h>
 #include <sys/types.h>
 
