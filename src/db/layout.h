@@ -13,41 +13,67 @@
 #define TABLE_MAX_PAGES 100
 
 typedef struct {
-    u_int32_t id;
+    uint32_t id;
     char name[NAME_SIZE + 1];  // +1 for the '\0' char
     char email[EMAIL_SIZE + 1];  // +1 for the '\0' char
 } Row;
 
-const u_int32_t SCHEMA_ID_SIZE = attr_size_identifier(Row, id);
-const u_int32_t SCHEMA_NAME_SIZE = attr_size_identifier(Row, name);
-const u_int32_t SCHEMA_EMAIL_SIZE = attr_size_identifier(Row, email);
+const uint32_t SCHEMA_ID_SIZE = attr_size_identifier(Row, id);
+const uint32_t SCHEMA_NAME_SIZE = attr_size_identifier(Row, name);
+const uint32_t SCHEMA_EMAIL_SIZE = attr_size_identifier(Row, email);
+const uint32_t SCHEMA_ID_OFFSET = 0;
+const uint32_t SCHEMA_NAME_OFFSET = SCHEMA_ID_OFFSET + SCHEMA_ID_SIZE;
+const uint32_t SCHEMA_EMAIL_OFFSET = SCHEMA_NAME_OFFSET + SCHEMA_NAME_SIZE;
+const uint32_t ROW_SIZE = SCHEMA_ID_SIZE + SCHEMA_NAME_SIZE + SCHEMA_EMAIL_SIZE;
+const uint32_t PAGE_SIZE = 4096;
 
-const u_int32_t SCHEMA_ID_OFFSET = 0;
-const u_int32_t SCHEMA_NAME_OFFSET = SCHEMA_ID_OFFSET + SCHEMA_ID_SIZE;
-const u_int32_t SCHEMA_EMAIL_OFFSET = SCHEMA_NAME_OFFSET + SCHEMA_NAME_SIZE;
+// common Node header layout
+// NOTE: the type just need an 1 bit for the representation until we've only 2 node types, but it's represented inside
+// an entirely byte to make more easely the implementation
+const uint32_t NODE_TYPE_SIZE = sizeof(uint8_t);
+const uint32_t NODE_TYPE_OFFSET = 0;
+// NOTE: the is root flag just need an 1 bit for the representation until we've only 2 node types, but it's represented
+// inside an entirely byte to make more easely the implementation
+const uint32_t IS_ROOT_SIZE = sizeof(uint8_t);
+const uint32_t IS_ROOT_OFFSET = NODE_TYPE_SIZE;
+const uint32_t PARENT_POINTER_SIZE = sizeof(uint32_t);
+const uint32_t PARENT_POINTER_OFFSET = IS_ROOT_SIZE + IS_ROOT_OFFSET;
+const uint8_t COMMON_NODE_HEADER_SIZE = IS_ROOT_SIZE + NODE_TYPE_SIZE + PARENT_POINTER_SIZE;
 
-const u_int32_t ROW_SIZE = SCHEMA_ID_SIZE + SCHEMA_NAME_SIZE + SCHEMA_EMAIL_SIZE;
+// leaf Node header format
+const uint32_t LEAF_NODE_NUM_CELLS_SIZE = sizeof(uint32_t);
+const uint32_t LEAF_NODE_NUM_CELLS_OFFSET = COMMON_NODE_HEADER_SIZE;
+const uint32_t LEAF_NODE_HEADER_SIZE = COMMON_NODE_HEADER_SIZE + LEAF_NODE_NUM_CELLS_SIZE;
 
-const u_int32_t PAGE_SIZE = 4096;
-const u_int32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
-const u_int32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
+// leaf Node body format
+const uint32_t LEAF_NODE_KEY_SIZE = sizeof(uint32_t);
+const uint32_t LEAF_NODE_KEY_OFFSET = 0;
+const uint32_t LEAF_NODE_VALUE_SIZE = ROW_SIZE;
+const uint32_t LEAF_NODE_VALUE_OFFSET = LEAF_NODE_KEY_OFFSET + LEAF_NODE_KEY_SIZE;
+const uint32_t LEAF_NODE_CELL_SIZE = LEAF_NODE_KEY_SIZE + LEAF_NODE_VALUE_SIZE;
+const uint32_t LEAF_NODE_SPACE_FOR_CELLS = PAGE_SIZE - LEAF_NODE_HEADER_SIZE;
+const uint32_t LEAF_NODE_MAX_CELLS = LEAF_NODE_SPACE_FOR_CELLS / LEAF_NODE_CELL_SIZE;
 
 typedef struct {
     int fd;
     uint32_t file_length;
+    uint32_t num_pages;
     void* pages[TABLE_MAX_PAGES];
 } Pager;
 
 typedef struct {
-    u_int32_t num_rows;
+    uint32_t root_page_num;
     Pager* pager;
 } Table;
 
 typedef struct {
     Table* table;
-    uint32_t row_num;
+    uint32_t page_num;
+    uint32_t cell_num;
     bool end_of_table;
 } Cursor;
+
+typedef enum { NODE_INTERNAL, NODE_LEAF } NodeType;
 
 void row_serialize(Row* source, void* desctination);
 void row_deserialize(void* source, Row* destination);
