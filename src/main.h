@@ -49,5 +49,9 @@ ExecuteResult exec_stmt_select(Table *table);
 ExecuteResult exec_statement(Statement *statement, Table *table);
 void close_input_buffer();
 void show_row(Row *row);
+void *get_page(Pager *page, uint32_t page_num);
+Cursor *table_start(Table *table);
+Cursor *table_end(Table *table);
+void cursor_advance(Cursor *cursor);
 
 #endif

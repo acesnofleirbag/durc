@@ -1,6 +1,7 @@
 #ifndef DB_LAYOUT_H
 #define DB_LAYOUT_H
 
+#include <stdbool.h>
 #include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
@@ -45,16 +46,16 @@ typedef struct {
 typedef struct {
     Table* table;
     uint32_t row_num;
+    bool end_of_table;
 } Cursor;
 
 void row_serialize(Row* source, void* desctination);
 void row_deserialize(void* source, Row* destination);
-void* define_row_slot(Table* table, u_int32_t num_rows);
+void* cursor_value(Cursor* cursor);
 Table* new_table();
 void show_row(Row* row);
 Pager* pager_open(const char* filename);
 Table* db_open(const char* filename);
 void db_close(Table* table);
-void* get_page(Pager* page, uint32_t page_num);
 
 #endif

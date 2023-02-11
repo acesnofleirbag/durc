@@ -145,22 +145,28 @@ exec_stmt_insert(Statement* statement, Table* table) {
     }
 
     Row* row = &(statement->row);
-    void* slot = define_row_slot(table, table->num_rows);
+    Cursor* cursor = table_end(table);
 
-    row_serialize(row, slot);
+    row_serialize(row, cursor_value(cursor));
     table->num_rows++;
+
+    free(cursor);
 
     return EXEC_RES_SUCCESS;
 }
 
 ExecuteResult
 exec_stmt_select(Table* table) {
+    Cursor* cursor = table_start(table);
     Row row;
 
-    for (u_int32_t i = 0; i < table->num_rows; i++) {
-        row_deserialize(define_row_slot(table, i), &row);
+    while (!(cursor->end_of_table)) {
+        row_deserialize(cursor_value(cursor), &row);
         show_row(&row);
+        cursor_advance(cursor);
     }
+
+    free(cursor);
 
     return EXEC_RES_SUCCESS;
 }
@@ -190,9 +196,10 @@ row_deserialize(void* source, Row* destination) {
 }
 
 void*
-define_row_slot(Table* table, u_int32_t row_number) {
+cursor_value(Cursor* cursor) {
+    uint32_t row_number = cursor->row_num;
     u_int32_t page_number = row_number / ROWS_PER_PAGE;
-    void* page = get_page(table->pager, page_number);
+    void* page = get_page(cursor->table->pager, page_number);
 
     // number of pages already allocated
     u_int32_t row_offset = row_number % ROWS_PER_PAGE;
@@ -343,4 +350,35 @@ db_close(Table* table) {
 
     free(pager);
     free(table);
+}
+
+Cursor*
+table_start(Table* table) {
+    Cursor* cursor = malloc(sizeof(Cursor));
+
+    cursor->table = table;
+    cursor->row_num = 0;
+    cursor->end_of_table = (table->num_rows == 0);
+
+    return cursor;
+}
+
+Cursor*
+table_end(Table* table) {
+    Cursor* cursor = malloc(sizeof(Cursor));
+
+    cursor->table = table;
+    cursor->row_num = table->num_rows;
+    cursor->end_of_table = true;
+
+    return cursor;
+}
+
+void
+cursor_advance(Cursor* cursor) {
+    cursor->row_num += 1;
+
+    if (cursor->row_num == cursor->table->num_rows) {
+        cursor->end_of_table = true;
+    }
 }
