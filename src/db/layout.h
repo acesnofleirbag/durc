@@ -1,6 +1,7 @@
 #ifndef DB_LAYOUT_H
 #define DB_LAYOUT_H
 
+#include <stdint.h>
 #include <stdio.h>
 #include <sys/types.h>
 
@@ -12,8 +13,8 @@
 
 typedef struct {
     u_int32_t id;
-    char name[NAME_SIZE];
-    char email[EMAIL_SIZE];
+    char name[NAME_SIZE + 1];  // +1 for the '\0' char
+    char email[EMAIL_SIZE + 1];  // +1 for the '\0' char
 } Row;
 
 const u_int32_t SCHEMA_ID_SIZE = attr_size_identifier(Row, id);
@@ -31,15 +32,24 @@ const u_int32_t ROWS_PER_PAGE = PAGE_SIZE / ROW_SIZE;
 const u_int32_t TABLE_MAX_ROWS = ROWS_PER_PAGE * TABLE_MAX_PAGES;
 
 typedef struct {
-    u_int32_t num_rows;
+    int fd;
+    uint32_t file_length;
     void* pages[TABLE_MAX_PAGES];
+} Pager;
+
+typedef struct {
+    u_int32_t num_rows;
+    Pager* pager;
 } Table;
 
 void row_serialize(Row*, void*);
 void row_deserialize(void*, Row*);
 void* define_row_slot(Table*, u_int32_t);
 Table* new_table();
-void free_table(Table*);
 void show_row(Row*);
+Pager* pager_open(const char* filename);
+Table* db_open(const char* filename);
+void db_close(Table*);
+void* get_page(Pager* page, uint32_t page_num);
 
 #endif

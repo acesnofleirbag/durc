@@ -31,6 +31,8 @@ typedef enum {
     PREP_SUCCESS,
     PREP_UNRECOGNIZED_STATEMENT,
     PREP_SYNTAX_ERROR,
+    PREP_NEGATIVE_ROW_ID,
+    PREP_STR_TOO_LONG,
 } PrepareResult;
 
 typedef enum {
@@ -41,7 +43,7 @@ typedef enum {
 InputBuffer *new_input_buffer();
 void display_prompt();
 void read_input(InputBuffer *);
-MetaCmdResult exec_meta_cmd(InputBuffer *);
+MetaCmdResult exec_meta_cmd(InputBuffer *, Table *table);
 PrepareResult prepare_statement(InputBuffer *, Statement *);
 ExecuteResult exec_stmt_insert(Statement *, Table *);
 ExecuteResult exec_stmt_select(Table *);
