@@ -42,13 +42,13 @@ typedef enum {
 
 InputBuffer *new_input_buffer();
 void display_prompt();
-void read_input(InputBuffer *);
-MetaCmdResult exec_meta_cmd(InputBuffer *, Table *table);
-PrepareResult prepare_statement(InputBuffer *, Statement *);
-ExecuteResult exec_stmt_insert(Statement *, Table *);
-ExecuteResult exec_stmt_select(Table *);
-ExecuteResult exec_statement(Statement *, Table *);
+void read_input(InputBuffer *buffer);
+MetaCmdResult exec_meta_cmd(InputBuffer *buffer, Table *table);
+PrepareResult prepare_statement(InputBuffer *buffer, Statement *statement);
+ExecuteResult exec_stmt_insert(Statement *statement, Table *table);
+ExecuteResult exec_stmt_select(Table *table);
+ExecuteResult exec_statement(Statement *statement, Table *table);
 void close_input_buffer();
-void show_row(Row *);
+void show_row(Row *row);
 
 #endif

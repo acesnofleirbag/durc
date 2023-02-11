@@ -42,14 +42,19 @@ typedef struct {
     Pager* pager;
 } Table;
 
-void row_serialize(Row*, void*);
-void row_deserialize(void*, Row*);
-void* define_row_slot(Table*, u_int32_t);
+typedef struct {
+    Table* table;
+    uint32_t row_num;
+} Cursor;
+
+void row_serialize(Row* source, void* desctination);
+void row_deserialize(void* source, Row* destination);
+void* define_row_slot(Table* table, u_int32_t num_rows);
 Table* new_table();
-void show_row(Row*);
+void show_row(Row* row);
 Pager* pager_open(const char* filename);
 Table* db_open(const char* filename);
-void db_close(Table*);
+void db_close(Table* table);
 void* get_page(Pager* page, uint32_t page_num);
 
 #endif
