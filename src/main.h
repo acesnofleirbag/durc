@@ -37,6 +37,7 @@ typedef enum {
 typedef enum {
     EXEC_RES_SUCCESS,
     EXEC_RES_TABLE_FULL,
+    EXEC_DUPLICATE_KEY,
 } ExecuteResult;
 
 InputBuffer *new_input_buffer();
@@ -52,7 +53,6 @@ void show_row(Row *row);
 void *get_page(Pager *page, uint32_t page_num);
 void pager_flush(Pager *pager, uint32_t page_num);
 Cursor *table_start(Table *table);
-Cursor *table_end(Table *table);
 void cursor_advance(Cursor *cursor);
 uint32_t *leaf_node_num_cells(void *node);
 void *leaf_node_cell(void *node, uint32_t cell_num);
@@ -61,5 +61,9 @@ void *leaf_node_value(void *node, uint32_t cell_num);
 void init_leaf_node(void *node);
 void leaf_node_insert(Cursor *cursor, uint32_t key, Row *data);
 void display_constants();
+Cursor *table_find(Table *table, uint32_t key);
+Cursor *leaf_node_find(Table *table, uint32_t page_num, uint32_t key);
+NodeType get_node_type(void *node);
+void set_node_type(void *node, NodeType type);
 
 #endif

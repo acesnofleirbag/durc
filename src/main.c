@@ -58,6 +58,9 @@ main(int argc, char** argv) {
             case (EXEC_RES_TABLE_FULL):
                 printf("ERR: full table\n");
                 break;
+            case (EXEC_DUPLICATE_KEY):
+                printf("ERR: duplicated key\n");
+                break;
         }
     }
 }
@@ -156,15 +159,25 @@ prepare_statement(InputBuffer* input_buffer, Statement* statement) {
 ExecuteResult
 exec_stmt_insert(Statement* statement, Table* table) {
     void* node = get_page(table->pager, table->root_page_num);
+    uint32_t num_cells = (*leaf_node_num_cells(node));
 
-    if ((*leaf_node_num_cells(node) >= LEAF_NODE_MAX_CELLS)) {
+    if (num_cells >= LEAF_NODE_MAX_CELLS) {
         return EXEC_RES_TABLE_FULL;
     }
 
     Row* row = &(statement->row);
-    Cursor* cursor = table_end(table);
+    uint32_t key = row->id;
+    Cursor* cursor = table_find(table, key);
 
-    leaf_node_insert(cursor, row->id, row);
+    if (cursor->cell_num < num_cells) {
+        uint32_t key_at_index = *leaf_node_key(node, cursor->cell_num);
+
+        if (key_at_index == key) {
+            return EXEC_DUPLICATE_KEY;
+        }
+    }
+
+    leaf_node_insert(cursor, key, row);
 
     free(cursor);
 
@@ -376,22 +389,6 @@ table_start(Table* table) {
     return cursor;
 }
 
-Cursor*
-table_end(Table* table) {
-    Cursor* cursor = malloc(sizeof(Cursor));
-
-    cursor->table = table;
-    cursor->page_num = table->root_page_num;
-
-    void* root_node = get_page(table->pager, table->root_page_num);
-    uint32_t num_cells = *leaf_node_num_cells(root_node);
-
-    cursor->cell_num = num_cells;
-    cursor->end_of_table = true;
-
-    return cursor;
-}
-
 void
 cursor_advance(Cursor* cursor) {
     uint32_t page_num = cursor->page_num;
@@ -404,7 +401,7 @@ cursor_advance(Cursor* cursor) {
 }
 
 // NOTE: this functions is used as a pointer arithmetic operations to get the memory address that the value will be
-// stored or accessed 
+// stored or accessed
 uint32_t*
 leaf_node_num_cells(void* node) {
     return node + LEAF_NODE_NUM_CELLS_OFFSET;
@@ -427,6 +424,7 @@ leaf_node_value(void* node, uint32_t cell_num) {
 
 void
 init_leaf_node(void* node) {
+    set_node_type(node, NODE_LEAF);
     *leaf_node_num_cells(node) = 0;
 }
 
@@ -466,4 +464,61 @@ display_constants() {
            LEAF_NODE_CELL_SIZE,
            LEAF_NODE_SPACE_FOR_CELLS,
            LEAF_NODE_MAX_CELLS);
+}
+
+Cursor*
+table_find(Table* table, uint32_t key) {
+    void* root_node = get_page(table->pager, table->root_page_num);
+
+    if (get_node_type(root_node) == NODE_LEAF) {
+        return leaf_node_find(table, table->root_page_num, key);
+    }
+
+    printf("need to implement search on internal node\n");
+    exit(EXIT_FAILURE);
+}
+
+Cursor*
+leaf_node_find(Table* table, uint32_t page_num, uint32_t key) {
+    void* node = get_page(table->pager, page_num);
+    uint32_t num_cells = *leaf_node_num_cells(node);
+    Cursor* cursor = malloc(sizeof(Cursor));
+
+    cursor->table = table;
+    cursor->page_num = page_num;
+
+    // binary search tree implementation
+    uint32_t start_idx = 0;
+    uint32_t end_idx = num_cells;
+
+    while (start_idx != end_idx) {
+        uint32_t middle = (start_idx + end_idx) / 2;
+        uint32_t key_at_index = *leaf_node_key(node, middle);
+
+        if (key == key_at_index) {
+            cursor->cell_num = middle;
+
+            return cursor;
+        } else if (key < key_at_index) {
+            end_idx = middle;
+        } else {
+            start_idx = middle + 1;
+        }
+    }
+
+    cursor->cell_num = start_idx;
+
+    return cursor;
+}
+
+NodeType
+get_node_type(void* node) {
+    uint8_t type = *((uint8_t*) (node + NODE_TYPE_OFFSET));
+
+    return (NodeType) type;
+}
+
+void
+set_node_type(void* node, NodeType type) {
+    *((uint8_t*) (node + NODE_TYPE_OFFSET)) = (uint8_t) type;
 }
