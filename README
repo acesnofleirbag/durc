@@ -1,0 +1,16 @@
+Dependencies
+---
+
+- cmake
+- ninja
+- clang
+
+How To Run
+---
+
+$ mkdir build
+$ cd build
+$ cmake -G Ninja ..     // ninja with a capital 'n' letter
+$ ninja
+$ ./durc <database-storage-filename>
+
