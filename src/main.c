@@ -105,6 +105,7 @@ exec_meta_cmd(InputBuffer* input_buffer, Table* table) {
         display_constants();
         return META_CMD_SUCCESS;
     } else if (strcmp(input_buffer->buffer, ".btree") == 0) {
+        printf("TREE\n");
         display_tree(table->pager, 0, 0);
 
         return META_CMD_SUCCESS;
@@ -465,10 +466,9 @@ table_find(Table* table, uint32_t key) {
 
     if (get_node_type(root_node) == NODE_LEAF) {
         return leaf_node_find(table, table->root_page_num, key);
-    }
-
-    printf("need to implement search on internal node\n");
-    exit(EXIT_FAILURE);
+    } else {
+        return internal_node_find(table, table->root_page_num, key);
+    } 
 }
 
 Cursor*
@@ -636,7 +636,7 @@ is_node_root(void* node) {
 
 void
 set_node_root(void* node, bool is_root) {
-    *((uint8_t*) (node + IS_ROOT_OFFSET)) = is_root;
+    *((uint8_t*) (node + IS_ROOT_OFFSET)) = (uint8_t) is_root;
 }
 
 void
@@ -690,5 +690,34 @@ display_tree(Pager* pager, uint32_t page_num, uint32_t indent_level) {
             display_tree(pager, child, indent_level + 1);
 
             break;
+    }
+}
+
+Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key) {
+    void* node = get_page(table->pager, page_num);
+    uint32_t num_keys = *internal_node_num_keys(node);
+
+    uint32_t start_idx = 0;
+    uint32_t end_idx = num_keys;
+
+    while (start_idx != end_idx) {
+        uint32_t middle = (start_idx + end_idx) / 2;
+        uint32_t key_to_right = *internal_node_key(node, middle);
+
+        if (key_to_right >= key) {
+            end_idx = start_idx;
+        } else {
+            start_idx = middle + 1;
+        }
+    }
+
+    uint32_t child_num = *internal_node_child(node, start_idx);
+    void* child = get_page(table->pager, child_num);
+
+    switch(get_node_type(child)) {
+        case NODE_INTERNAL:
+            return internal_node_find(table, child_num, key);
+        case NODE_LEAF:
+            return leaf_node_find(table, child_num, key);
     }
 }

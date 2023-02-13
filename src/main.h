@@ -78,5 +78,6 @@ bool is_node_root(void *node);
 void set_node_root(void *node, bool is_root);
 void init_internal_node(void *node);
 void display_tree(Pager *pager, uint32_t page_num, uint32_t indent_level);
+Cursor* internal_node_find(Table* table, uint32_t page_num, uint32_t key);
 
 #endif
